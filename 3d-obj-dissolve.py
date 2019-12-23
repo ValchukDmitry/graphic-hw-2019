@@ -127,9 +127,10 @@ class View:
 
     def rotate_camera(self, dx, dy):
         glMatrixMode(GL_MODELVIEW)
-        glRotate(self.rotation_speed * dx, 0, np.sqrt(2), np.sqrt(2))
-        right = np.dot(glGetDoublev(GL_MODELVIEW_MATRIX), (1, 0, 0, 1))[:-1]
-        glRotate(self.rotation_speed * dy, *right)
+        glRotate(self.rotation_speed * dx, *(0, 0, 1))
+        y_rotation = np.dot(glGetDoublev(GL_MODELVIEW_MATRIX), (0, 1, 0, 0))[:-1]
+        glRotate(self.rotation_speed * dy, *y_rotation)
+        glutPostRedisplay()
 
 
     def motion_handler(self, x, y):
@@ -152,9 +153,9 @@ class View:
         x, y = self.from_screen_coords(x, y)
         zoom_factor = 1 + (-self.zoom_speed if direction >
                            0 else self.zoom_speed)
-        self.center[0] += x * self.scale * (zoom_factor - 1)
-        self.center[1] += y * self.scale * (zoom_factor - 1)
-        self.scale *= zoom_factor
+        glMatrixMode(GL_MODELVIEW)
+        glScale(zoom_factor, zoom_factor, zoom_factor)
+        glutPostRedisplay()
 
 
     def reshape_handler(self, w, h):
@@ -162,7 +163,7 @@ class View:
         glLoadIdentity()
         glViewport(0, 0, width, height)
         gluPerspective(45, width / height, 0.001, 200)
-        gluLookAt(1, -100, 1, *self.center, 0, 1, 1)
+        gluLookAt(100, 0, 0, *self.center, 0, 0, 1)
         glutReshapeWindow(self.width, self.height)
 
 
@@ -180,12 +181,14 @@ def load_shader(path, shader_type):
     glCompileShader(shader)
     return shader
 
+
 def gen_texture(iters):
     texture = np.array([i * (np.random.random() + 0.5) for i in range(TEXTURE_SIZE*TEXTURE_SIZE)], dtype=float)
     texture -= np.min(texture)
     if np.max(texture):
         texture /= np.max(texture)
     return list(texture)
+
 
 width = 1000
 height = 700
