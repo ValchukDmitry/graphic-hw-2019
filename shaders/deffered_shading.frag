@@ -12,9 +12,8 @@ struct Light {
     vec3 Color;
     float Linear;
     float Quadratic;
-    float Radius;
 };
-const int NR_LIGHTS = 150;
+const int NR_LIGHTS = 32;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 viewPos;
 
@@ -31,23 +30,23 @@ void main()
     vec3 viewDir  = normalize(viewPos - FragPos);
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
-        // calculate distance between light source and current fragment
+        // diffuse
+        vec3 lightDir = normalize(lights[i].Position - FragPos);
+        vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * lights[i].Color;
+        // specular
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
+        vec3 specular = lights[i].Color * spec * Specular;
+        // attenuation
         float distance = length(lights[i].Position - FragPos);
-        if(distance < lights[i].Radius)
-        {
-            // diffuse
-            vec3 lightDir = normalize(lights[i].Position - FragPos);
-            vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * lights[i].Color;
-            // specular
-            vec3 halfwayDir = normalize(lightDir + viewDir);
-            float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
-            vec3 specular = lights[i].Color * spec * Specular;
-            // attenuation
-            float attenuation = 1.0 / (1.0 + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
-            diffuse *= attenuation;
-            specular *= attenuation;
-            lighting += diffuse + specular;
-        }
+        float attenuation = 1.0 / (1.0 + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
+        diffuse *= attenuation;
+        specular *= attenuation;
+        lighting += diffuse + specular;
     }
-    FragColor = vec4(lighting, 1.0);
+    if(FragPos.x==0 && FragPos.y == 0 && FragPos.z == 0) {
+        FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    } else {
+        FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+    }
 }
